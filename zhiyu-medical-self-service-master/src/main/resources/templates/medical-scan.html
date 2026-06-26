@@ -1,0 +1,2051 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>智能扫描 - 诊断书分析</title>
+
+    <link rel="shortcut icon" type="image/x-icon" href="assets/images/cropped-favicon-32x32.png"/>
+    <link href="assets/css/bootstrap.min.css" rel="stylesheet" type="text/css"/>
+    <link href="assets/css/style.css" rel="stylesheet" type="text/css"/>
+    <link href="assets/css/plugin.css" rel="stylesheet" type="text/css"/>
+    <link href="assets/css/dashboard.css" rel="stylesheet" type="text/css"/>
+    <link href="assets/fonts/flaticon.css" rel="stylesheet" type="text/css"/>
+    <link href="assets/css/icons.css" rel="stylesheet" type="text/css"/>
+    <link rel="stylesheet" href="assets/fonts/line-icons.css" type="text/css"/>
+    <link rel="stylesheet" href="common/font-awesome/css/font-awesome.min.css">
+
+    <style>
+        /* 购买按钮样式 */
+        .btn-buy {
+            display: inline-block;
+            background: #ff6b6b;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            text-decoration: none;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-buy:hover {
+            background: #ff4757;
+            color: white;
+            text-decoration: none;
+            transform: scale(1.05);
+        }
+
+        .btn-buy i {
+            margin-right: 4px;
+        }
+
+        /* 智能扫描页面自定义样式 */
+        .scan-upload-area {
+            border: 2px dashed #4CAF50;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            background: #f8f9fa;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .scan-upload-area:hover {
+            border-color: #45a049;
+            background: #e8f5e9;
+        }
+
+        .scan-upload-area.dragover {
+            background: #c8e6c9;
+            border-color: #2e7d32;
+        }
+
+        .upload-icon {
+            font-size: 60px;
+            color: #4CAF50;
+            margin-bottom: 15px;
+        }
+
+        .file-info {
+            margin-top: 15px;
+            padding: 10px;
+            background: #fff;
+            border-radius: 8px;
+            display: inline-block;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .analysis-result {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .result-section {
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+        }
+
+        .result-section h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .result-section h4 i {
+            color: #4CAF50;
+            margin-right: 8px;
+        }
+
+        .badge-normal {
+            background: #28a745;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+
+        .badge-abnormal {
+            background: #dc3545;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+
+        .badge-warning {
+            background: #ffc107;
+            color: #333;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 9999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #4CAF50;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: white;
+            margin-top: 15px;
+            font-size: 16px;
+        }
+
+        .confidence-bar {
+            background: #e9ecef;
+            border-radius: 10px;
+            height: 8px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .confidence-fill {
+            background: #4CAF50;
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
+        .btn-scan {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 30px;
+            transition: all 0.3s;
+            color: white;
+            cursor: pointer;
+        }
+
+        .btn-scan:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .btn-reset {
+            background: #6c757d;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 30px;
+            margin-left: 10px;
+            color: white;
+            cursor: pointer;
+        }
+
+        .btn-reset:hover {
+            background: #5a6268;
+        }
+
+        .feature-card {
+            background: #fff;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #4CAF50;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        /* ============================================================
+           报告预览模态框 - 修复文字窜行问题
+           ============================================================ */
+        .report-preview-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 10000;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .report-preview-content {
+            max-width: 800px;
+            margin: 20px auto;
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 35px 40px;
+            position: relative;
+            line-height: 1.8;
+            font-family: "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", "Helvetica Neue", Arial, sans-serif;
+        }
+
+        .close-preview {
+            position: absolute;
+            top: 15px;
+            right: 25px;
+            font-size: 32px;
+            cursor: pointer;
+            color: #999;
+            z-index: 10;
+            transition: color 0.2s;
+        }
+
+        .close-preview:hover {
+            color: #333;
+        }
+
+        .preview-actions {
+            text-align: center;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .btn-print {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 35px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.2s;
+        }
+
+        .btn-print:hover {
+            background: #45a049;
+        }
+
+        /* 按钮组样式 */
+        .btn-group {
+            display: inline-flex;
+            gap: 10px;
+            margin-right: 10px;
+        }
+
+        .btn-primary {
+            background: #17a2b8;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 30px;
+            transition: all 0.3s;
+            color: white;
+            cursor: pointer;
+        }
+
+        .btn-primary:hover {
+            background: #138496;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 30px;
+            transition: all 0.3s;
+            color: white;
+            cursor: pointer;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+
+        /* ============================================================
+           报告内容样式 - 修复文字窜行问题
+           ============================================================ */
+        #reportContent {
+            font-family: "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.8;
+            color: #333;
+            font-size: 14px;
+        }
+
+        #reportContent * {
+            line-height: 1.8;
+        }
+
+        #reportContent .report-container {
+            max-width: 100%;
+            margin: 0 auto;
+            background: white;
+        }
+
+        #reportContent .report-header {
+            text-align: center;
+            padding: 30px 20px 20px;
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border-radius: 12px 12px 0 0;
+        }
+
+        #reportContent .report-title {
+            font-size: 26px;
+            font-weight: bold;
+            color: #2e7d32;
+            margin-bottom: 6px;
+        }
+
+        #reportContent .report-subtitle {
+            font-size: 12px;
+            color: #666;
+        }
+
+        #reportContent .hospital-info {
+            text-align: center;
+            margin-top: 8px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        #reportContent .report-body {
+            padding: 25px 30px;
+        }
+
+        #reportContent .info-card {
+            background: #f5f7fa;
+            border-radius: 10px;
+            padding: 18px 20px;
+            margin-bottom: 18px;
+        }
+
+        #reportContent .info-row {
+            display: flex;
+            margin-bottom: 6px;
+            flex-wrap: wrap;
+            align-items: baseline;
+        }
+
+        #reportContent .info-label {
+            width: 110px;
+            font-weight: 600;
+            color: #555;
+            flex-shrink: 0;
+        }
+
+        #reportContent .info-value {
+            flex: 1;
+            color: #333;
+            word-break: break-word;
+        }
+
+        #reportContent .report-section {
+            margin-bottom: 22px;
+            page-break-inside: avoid;
+        }
+
+        #reportContent .section-title {
+            font-size: 17px;
+            font-weight: bold;
+            color: #2e7d32;
+            border-left: 4px solid #4CAF50;
+            padding-left: 12px;
+            margin-bottom: 12px;
+        }
+
+        #reportContent .diagnosis-box {
+            background: #e8f5e9;
+            padding: 15px 18px;
+            border-radius: 10px;
+            margin: 12px 0;
+        }
+
+        #reportContent .diagnosis-box .primary-diagnosis {
+            font-size: 19px;
+            font-weight: bold;
+            color: #1b5e20;
+        }
+
+        #reportContent .report-footer {
+            background: #f5f7fa;
+            padding: 18px 20px;
+            text-align: center;
+            font-size: 11px;
+            color: #999;
+            border-radius: 0 0 12px 12px;
+        }
+
+        #reportContent .disclaimer {
+            background: #fafafa;
+            padding: 12px 15px;
+            border-radius: 6px;
+            font-size: 10px;
+            color: #888;
+            text-align: center;
+            margin-top: 18px;
+            line-height: 1.6;
+        }
+
+        #reportContent table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            font-size: 13px;
+        }
+
+        #reportContent table th {
+            background: #4CAF50;
+            color: white;
+            padding: 8px 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        #reportContent table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        #reportContent .signature-line {
+            margin-top: 28px;
+            padding-top: 15px;
+            display: flex;
+            justify-content: space-between;
+            border-top: 1px solid #eee;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        #reportContent .verification-code {
+            text-align: center;
+            margin-top: 18px;
+            padding-top: 12px;
+            border-top: 1px dashed #ddd;
+            font-size: 10px;
+            color: #aaa;
+        }
+
+        #reportContent ul,
+        #reportContent ol {
+            padding-left: 22px;
+            margin: 6px 0;
+        }
+
+        #reportContent li {
+            margin-bottom: 3px;
+        }
+
+        #reportContent p {
+            margin: 4px 0;
+        }
+
+        #reportContent strong,
+        #reportContent b {
+            font-weight: 600;
+        }
+
+        /* ============================================================
+           移动端适配
+           ============================================================ */
+        @media (max-width: 768px) {
+            .report-preview-content {
+                padding: 18px 15px;
+                margin: 10px;
+            }
+
+            #reportContent .info-label {
+                width: 80px;
+                font-size: 13px;
+            }
+
+            #reportContent .report-body {
+                padding: 15px;
+            }
+
+            #reportContent .info-row {
+                flex-direction: column;
+                margin-bottom: 10px;
+            }
+
+            #reportContent .info-label {
+                width: 100%;
+                margin-bottom: 2px;
+            }
+
+            #reportContent .signature-line {
+                flex-direction: column;
+                gap: 6px;
+            }
+
+            #reportContent table {
+                font-size: 12px;
+            }
+
+            #reportContent table th,
+            #reportContent table td {
+                padding: 5px 8px;
+            }
+
+            #reportContent .report-title {
+                font-size: 20px;
+            }
+        }
+
+        /* ============================================================
+           打印样式
+           ============================================================ */
+        /* ============================================================
+               打印样式 - 修复打印时文字窜行
+               ============================================================ */
+        @media print {
+            /* 隐藏不需要打印的元素 */
+            body * {
+                visibility: hidden;
+            }
+
+            .report-preview-modal,
+            .report-preview-modal * {
+                visibility: visible;
+            }
+
+            .report-preview-modal {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: white;
+                padding: 0;
+                margin: 0;
+                overflow: visible;
+            }
+
+            .report-preview-content {
+                box-shadow: none;
+                padding: 20px 30px;
+                margin: 0 auto;
+                max-width: 100%;
+                border-radius: 0;
+                background: white;
+                line-height: 1.8;
+                font-family: "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", "SimSun", "Helvetica Neue", Arial, sans-serif;
+            }
+
+            .close-preview,
+            .preview-actions {
+                display: none !important;
+            }
+
+            /* ====== 报告内容打印样式 ====== */
+            #reportContent,
+            #reportContent * {
+                line-height: 1.8 !important;
+                font-family: "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", "SimSun", "Helvetica Neue", Arial, sans-serif !important;
+            }
+
+            #reportContent .report-container {
+                max-width: 100%;
+                margin: 0 auto;
+                background: white;
+            }
+
+            #reportContent .report-header {
+                text-align: center;
+                padding: 20px 20px 15px;
+                background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+                border-radius: 0;
+            }
+
+            #reportContent .report-title {
+                font-size: 22px;
+                font-weight: bold;
+                color: #2e7d32;
+                margin-bottom: 4px;
+            }
+
+            #reportContent .report-subtitle {
+                font-size: 11px;
+                color: #666;
+            }
+
+            #reportContent .hospital-info {
+                text-align: center;
+                margin-top: 6px;
+                font-size: 13px;
+                color: #555;
+            }
+
+            #reportContent .report-body {
+                padding: 20px 25px;
+            }
+
+            #reportContent .info-card {
+                background: #f5f7fa;
+                border-radius: 8px;
+                padding: 14px 18px;
+                margin-bottom: 14px;
+                page-break-inside: avoid;
+            }
+
+            #reportContent .info-row {
+                display: flex;
+                margin-bottom: 4px;
+                flex-wrap: wrap;
+                align-items: baseline;
+            }
+
+            #reportContent .info-label {
+                width: 100px;
+                font-weight: 600;
+                color: #555;
+                flex-shrink: 0;
+                font-size: 13px;
+            }
+
+            #reportContent .info-value {
+                flex: 1;
+                color: #333;
+                word-break: break-word;
+                font-size: 13px;
+            }
+
+            #reportContent .report-section {
+                margin-bottom: 18px;
+                page-break-inside: avoid;
+            }
+
+            #reportContent .section-title {
+                font-size: 16px;
+                font-weight: bold;
+                color: #2e7d32;
+                border-left: 4px solid #4CAF50;
+                padding-left: 12px;
+                margin-bottom: 10px;
+            }
+
+            #reportContent .diagnosis-box {
+                background: #e8f5e9;
+                padding: 12px 16px;
+                border-radius: 8px;
+                margin: 10px 0;
+                page-break-inside: avoid;
+            }
+
+            #reportContent .diagnosis-box .primary-diagnosis {
+                font-size: 18px;
+                font-weight: bold;
+                color: #1b5e20;
+            }
+
+            #reportContent .report-footer {
+                background: #f5f7fa;
+                padding: 14px 18px;
+                text-align: center;
+                font-size: 10px;
+                color: #999;
+                border-radius: 0;
+            }
+
+            #reportContent .disclaimer {
+                background: #fafafa;
+                padding: 10px 14px;
+                border-radius: 4px;
+                font-size: 9px;
+                color: #888;
+                text-align: center;
+                margin-top: 14px;
+                line-height: 1.6;
+            }
+
+            #reportContent table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 8px 0;
+                font-size: 12px;
+            }
+
+            #reportContent table th {
+                background: #4CAF50;
+                color: white;
+                padding: 6px 10px;
+                text-align: left;
+                font-weight: 600;
+            }
+
+            #reportContent table td {
+                padding: 6px 10px;
+                border-bottom: 1px solid #eee;
+            }
+
+            #reportContent .signature-line {
+                margin-top: 24px;
+                padding-top: 12px;
+                display: flex;
+                justify-content: space-between;
+                border-top: 1px solid #eee;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            #reportContent .verification-code {
+                text-align: center;
+                margin-top: 14px;
+                padding-top: 10px;
+                border-top: 1px dashed #ddd;
+                font-size: 9px;
+                color: #aaa;
+            }
+
+            #reportContent ul,
+            #reportContent ol {
+                padding-left: 20px;
+                margin: 4px 0;
+            }
+
+            #reportContent li {
+                margin-bottom: 2px;
+            }
+
+            #reportContent p {
+                margin: 3px 0;
+            }
+
+            #reportContent strong,
+            #reportContent b {
+                font-weight: 600;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div id="preloader">
+    <div id="status"></div>
+</div>
+
+<!-- 加载遮罩层 -->
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">AI正在智能分析诊断书，请稍候...</div>
+    <div class="loading-text" style="font-size: 12px; margin-top: 10px;">通义千问VL大模型全力工作中</div>
+</div>
+
+<!-- 引入公共头部 -->
+<div th:replace="common/common-bar::#header"></div>
+
+<div id="dashboard">
+    <div class="container">
+        <div class="dashboard-main">
+            <div class="row">
+                <div class="col-lg-3 col-md-12 col-sm-12 col-xs-12">
+                    <div th:replace="common/common-bar::#dashboard-sidebar"></div>
+                </div>
+                <div class="col-lg-9 col-md-12 col-sm-12 col-xs-12">
+                    <div class="dashboard-content">
+                        <div class="dashboard-form mb-4">
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="section-title text-center mb-4">
+                                        <h2><i class="fa fa-robot"></i> 智能诊断书扫描</h2>
+                                        <p>上传诊断书或检验报告，AI将自动识别并结构化分析内容</p>
+                                        <p style="color: #ff6b6b; font-size: 14px; margin-top: 5px;">
+                                            <i class="fa fa-exclamation-triangle"></i>
+                                            请上传诊断书、检验报告、处方等医疗文档
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 上传区域 -->
+                            <div class="row">
+                                <div class="col-12">
+                                    <div id="uploadArea" class="scan-upload-area" onclick="document.getElementById('fileInput').click()">
+                                        <i class="fa fa-cloud-upload upload-icon"></i>
+                                        <h4>点击或拖拽文件到此区域上传</h4>
+                                        <p class="text-muted">支持 JPG、PNG、JPEG 格式，文件大小不超过 10MB</p>
+                                        <div id="fileInfo" class="file-info" style="display: none;">
+                                            <i class="fa fa-file-image-o"></i> <span id="fileName"></span>
+                                        </div>
+                                    </div>
+                                    <input type="file" id="fileInput" accept="image/*,application/pdf" style="display: none;" onchange="handleFileSelect(this)">
+                                </div>
+                            </div>
+
+                            <!-- 预览区域 -->
+                            <div class="row" id="previewRow" style="display: none;">
+                                <div class="col-12 text-center">
+                                    <img id="previewImage" class="preview-image" src="" alt="预览图片">
+                                    <div class="mt-2">
+                                        <button class="btn btn-scan" onclick="startAnalysis()">
+                                            <i class="fa fa-stethoscope"></i> 开始AI分析
+                                        </button>
+                                        <button class="btn btn-reset" onclick="resetUpload()">
+                                            <i class="fa fa-refresh"></i> 重新上传
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 分析结果区域 -->
+                            <div id="resultArea" style="display: none;">
+                                <div class="analysis-result">
+                                    <h3><i class="fa fa-file-text-o"></i> 分析结果</h3>
+
+                                    <!-- 患者信息 -->
+                                    <div class="result-section" id="patientInfo">
+                                        <h4><i class="fa fa-user-md"></i> 患者信息</h4>
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <strong>姓名：</strong> <span id="patientName">-</span>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <strong>年龄：</strong> <span id="patientAge">-</span>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <strong>性别：</strong> <span id="patientGender">-</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 诊断信息 -->
+                                    <div class="result-section" id="diagnosisInfo">
+                                        <h4><i class="fa fa-heartbeat"></i> 诊断结论</h4>
+                                        <p><strong>主要诊断：</strong> <span id="primaryDiagnosis">-</span></p>
+                                        <p><strong>次要诊断：</strong> <span id="secondaryDiagnosis">-</span></p>
+                                        <p><strong>ICD编码：</strong> <span id="icdCode">-</span></p>
+                                    </div>
+
+                                    <!-- 症状列表 -->
+                                    <div class="result-section" id="symptomsInfo">
+                                        <h4><i class="fa fa-thermometer-full"></i> 症状表现</h4>
+                                        <div id="symptomsList"></div>
+                                    </div>
+
+                                    <!-- 检查项目 -->
+                                    <div class="result-section" id="examinationsInfo">
+                                        <h4><i class="fa fa-flask"></i> 检验检查项目</h4>
+                                        <div id="examinationsList"></div>
+                                    </div>
+
+                                    <!-- 用药建议 -->
+                                    <div class="result-section" id="medicationsInfo">
+                                        <h4><i class="fa fa-medkit"></i> 用药建议</h4>
+                                        <div id="medicationsList"></div>
+                                    </div>
+
+                                    <!-- 医生建议 -->
+                                    <div class="result-section" id="recommendationsInfo">
+                                        <h4><i class="fa fa-commenting"></i> 医生建议</h4>
+                                        <p id="recommendations">-</p>
+                                    </div>
+
+                                    <!-- 医院信息 -->
+                                    <div class="result-section" id="hospitalInfo">
+                                        <h4><i class="fa fa-hospital-o"></i> 医院信息</h4>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <strong>医院名称：</strong> <span id="hospitalName">-</span>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <strong>医生姓名：</strong> <span id="doctorName">-</span>
+                                            </div>
+                                        </div>
+                                        <div class="row mt-2">
+                                            <div class="col-md-6">
+                                                <strong>报告日期：</strong> <span id="reportDate">-</span>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <strong>置信度：</strong>
+                                                <div class="confidence-bar">
+                                                    <div id="confidenceFill" class="confidence-fill" style="width: 0%"></div>
+                                                </div>
+                                                <span id="confidenceValue">0%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 操作按钮 -->
+                                <div class="text-center mt-3">
+                                    <button class="btn btn-scan" onclick="previewReport()">
+                                        <i class="fa fa-file-pdf-o"></i> 生成诊断报告
+                                    </button>
+                                    <!-- 语音播报按钮组 -->
+                                    <div class="btn-group" id="speakBtnGroup" style="display: inline-flex;">
+                                        <button class="btn btn-primary" onclick="speakAnalysisResult()" id="speakStartBtn">
+                                            <i class="fa fa-volume-up"></i> 语音播报
+                                        </button>
+                                        <button class="btn btn-danger" onclick="stopSpeaking()" id="speakStopBtn" style="display: none;">
+                                            <i class="fa fa-stop"></i> 停止播报
+                                        </button>
+                                    </div>
+                                    <button class="btn btn-primary" onclick="consultDoctor()" id="consultBtn" style="display: none;">
+                                        <i class="fa fa-stethoscope"></i> 咨询智能医生
+                                    </button>
+                                    <button class="btn btn-reset" onclick="resetAll()">
+                                        <i class="fa fa-plus-square"></i> 分析新文档
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- 功能介绍卡片 -->
+                            <div class="row mt-4" id="featureIntro">
+                                <div class="col-12">
+                                    <h4 class="text-center mb-3"><i class="fa fa-info-circle"></i> 功能介绍</h4>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="feature-card">
+                                        <i class="fa fa-file-image-o" style="font-size: 24px; color: #4CAF50;"></i>
+                                        <h5>多格式支持</h5>
+                                        <p>支持JPG、PNG等多种格式的诊断书上传</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="feature-card">
+                                        <i class="fa fa-magic" style="font-size: 24px; color: #4CAF50;"></i>
+                                        <h5>智能识别</h5>
+                                        <p>基于通义千问VL大模型，精准识别诊断书内容</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="feature-card">
+                                        <i class="fa fa-bar-chart" style="font-size: 24px; color: #4CAF50;"></i>
+                                        <h5>结构化输出</h5>
+                                        <p>自动提取患者信息、诊断结论、用药建议等关键信息</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="feature-card">
+                                        <i class="fa fa-shield" style="font-size: 24px; color: #4CAF50;"></i>
+                                        <h5>隐私保护</h5>
+                                        <p>上传图片加密存储，分析完成后可随时删除</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 报告预览模态框 -->
+<div id="reportPreviewModal" class="report-preview-modal">
+    <div class="report-preview-content">
+        <span class="close-preview" onclick="closeReportPreview()">&times;</span>
+        <div id="reportContent">
+            <!-- 动态生成的报告内容 -->
+        </div>
+        <div class="preview-actions">
+            <button class="btn-print" onclick="printReport()">
+                <i class="fa fa-print"></i> 打印/保存为PDF
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 引入公共底部 -->
+<div th:replace="common/common-bar::#back"></div>
+<div th:replace="common/common-bar::#footer"></div>
+<div th:replace="common/common-bar::#search"></div>
+<div th:replace="common/common-bar::#back-to-top"></div>
+
+<script src="assets/js/jquery-3.5.1.min.js"></script>
+<script src="assets/js/bootstrap.min.js"></script>
+<script src="assets/js/plugin.js"></script>
+<script src="assets/js/main.js"></script>
+<script src="assets/js/custom-nav.js"></script>
+<script src="assets/js/jpanelmenu.min.js"></script>
+<script src="assets/js/dashboard-custom.js"></script>
+<script src="common/utils/reg.js"></script>
+<script src="common/layer/layer.js"></script>
+<script src="common/custom.js"></script>
+
+<script>
+    let currentFile = null;
+    let currentAnalysisData = null;
+    let pollingTimer = null;     // 轮询定时器
+    let currentTaskId = null;    // 当前任务ID
+
+    // 语音播报相关变量
+    let isSpeaking = false;
+    let currentUtterance = null;
+    let selectedVoice = null;
+
+    // 预先加载声音（解决声音不一致问题）
+    function initVoice() {
+        if ('speechSynthesis' in window) {
+            // 等待声音加载完成
+            const loadVoices = setInterval(function() {
+                const voices = window.speechSynthesis.getVoices();
+                if (voices.length > 0) {
+                    // 选择中文女声
+                    selectedVoice = voices.find(voice =>
+                        voice.lang === 'zh-CN' &&
+                        (voice.name.includes('Female') || voice.name.includes('Tingting') || voice.name.includes('Xiaoxiao') || voice.name.includes('Yunxi'))
+                    );
+                    // 如果没找到中文女声，用第一个中文声音
+                    if (!selectedVoice) {
+                        selectedVoice = voices.find(voice => voice.lang === 'zh-CN');
+                    }
+                    clearInterval(loadVoices);
+                }
+            }, 100);
+        }
+    }
+
+    // 页面加载时初始化声音
+    initVoice();
+
+    // 拖拽上传
+    const uploadArea = document.getElementById('uploadArea');
+
+    uploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleFile(files[0]);
+        }
+    });
+
+    // 文件选择处理
+    function handleFileSelect(input) {
+        if (input.files.length > 0) {
+            handleFile(input.files[0]);
+        }
+    }
+
+    function handleFile(file) {
+        // 验证文件类型
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+        if (!validTypes.includes(file.type)) {
+            layer.msg('请上传 JPG、PNG 或 PDF 格式的文件', {icon: 2});
+            return;
+        }
+
+        // 验证文件大小 (10MB)
+        if (file.size > 10 * 1024 * 1024) {
+            layer.msg('文件大小不能超过 10MB', {icon: 2});
+            return;
+        }
+
+        currentFile = file;
+
+        // 显示文件信息
+        document.getElementById('fileName').innerText = file.name;
+        document.getElementById('fileInfo').style.display = 'inline-block';
+
+        // 显示图片预览
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('previewImage').src = e.target.result;
+                document.getElementById('previewRow').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        } else {
+            // PDF文件显示图标
+            document.getElementById('previewImage').src = 'assets/images/pdf-icon.png';
+            document.getElementById('previewRow').style.display = 'block';
+        }
+
+        // 隐藏介绍区域
+        document.getElementById('featureIntro').style.display = 'none';
+        layer.msg('文件已选择，点击"开始AI分析"按钮', {icon: 1});
+    }
+
+    // 开始分析（异步任务方式）
+    function startAnalysis() {
+        if (!currentFile) {
+            layer.msg('请先选择要分析的诊断书', {icon: 2});
+            return;
+        }
+
+        // 显示加载遮罩
+        document.getElementById('loadingOverlay').style.display = 'flex';
+
+        const formData = new FormData();
+        formData.append('file', currentFile);
+
+        $.ajax({
+            url: '/api/medical-record/analyze',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if (response.code === 200 || response.success === true) {
+                    var taskData = response.data || response;
+                    currentTaskId = taskData.taskId;
+                    layer.msg('分析任务已提交，正在处理...', {icon: 1});
+                    // 开始轮询任务状态
+                    startPolling(currentTaskId);
+                } else {
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                    layer.msg('提交失败：' + (response.msg || response.message), {icon: 2});
+                }
+            },
+            error: function(xhr, status, error) {
+                document.getElementById('loadingOverlay').style.display = 'none';
+                let errorMsg = '请求失败';
+                try {
+                    const resp = JSON.parse(xhr.responseText);
+                    errorMsg = resp.msg || resp.message || error;
+                } catch(e) {
+                    errorMsg = error;
+                }
+                layer.msg('提交失败：' + errorMsg, {icon: 2});
+            }
+        });
+    }
+
+    // 轮询任务状态
+    function startPolling(taskId) {
+        if (pollingTimer) {
+            clearInterval(pollingTimer);
+        }
+
+        // 立即查一次
+        pollTaskStatus(taskId);
+
+        pollingTimer = setInterval(function() {
+            pollTaskStatus(taskId);
+        }, 2000);
+    }
+
+    function pollTaskStatus(taskId) {
+        $.ajax({
+            url: '/api/analysis-history/status',
+            type: 'GET',
+            data: { id: taskId },
+            success: function(response) {
+                if (response.code === 200 || response.success === true) {
+                    var task = response.data || response;
+                    var status = task.status;
+                    var progress = task.progress || 0;
+
+                    // 更新进度显示
+                    updateProgressDisplay(progress, status);
+
+                    if (status === 'SUCCESS' || status === 'WARNING') {
+                        // 完成，获取完整结果
+                        clearInterval(pollingTimer);
+                        pollingTimer = null;
+                        document.getElementById('loadingOverlay').style.display = 'none';
+                        loadTaskDetail(taskId);
+                    } else if (status === 'FAILED') {
+                        clearInterval(pollingTimer);
+                        pollingTimer = null;
+                        document.getElementById('loadingOverlay').style.display = 'none';
+                        var errMsg = task.errorMessage || '分析失败，请重试';
+                        layer.msg('分析失败：' + errMsg, {icon: 2});
+                        // 在结果区域显示失败信息
+                        showFailedResult(errMsg);
+                    }
+                    // PENDING/PROCESSING 继续轮询
+                } else {
+                    // 接口异常，继续轮询
+                    console.warn('状态查询异常', response);
+                }
+            },
+            error: function() {
+                console.warn('状态查询请求失败，继续轮询');
+            }
+        });
+    }
+
+    // 更新进度显示
+    function updateProgressDisplay(progress, status) {
+        var loadingText = document.querySelector('.loading-text');
+        if (loadingText) {
+            var statusMap = {
+                'PENDING': '排队等待中...',
+                'PROCESSING': 'AI 正在分析诊断书...',
+                'SUCCESS': '分析完成！',
+                'FAILED': '分析失败',
+                'WARNING': '分析完成（部分识别）'
+            };
+            loadingText.innerHTML = (statusMap[status] || '处理中') +
+                ' <span style="font-size:12px;color:#aaa;">(' + progress + '%)</span>';
+        }
+    }
+
+    // 从详情接口加载完整分析结果
+    function loadTaskDetail(taskId) {
+        $.ajax({
+            url: '/api/analysis-history/detail',
+            type: 'GET',
+            data: { id: taskId },
+            success: function(response) {
+                if (response.code === 200 || response.success === true) {
+                    var detail = response.data || response;
+                    // 解析 analysisResult 字段
+                    var resultText = detail.analysisResult;
+                    if (resultText) {
+                        try {
+                            var parsed = typeof resultText === 'string' ? JSON.parse(resultText) : resultText;
+                            currentAnalysisData = parsed;
+                            displayAnalysisResult(parsed);
+
+                            if (detail.status === 'WARNING') {
+                                layer.msg('分析完成（部分信息未识别）', {icon: 0});
+                            } else {
+                                layer.msg('分析完成！', {icon: 1});
+                            }
+                        } catch(e) {
+                            layer.msg('结果数据解析失败', {icon: 2});
+                        }
+                    } else {
+                        layer.msg('未找到分析结果', {icon: 2});
+                    }
+                } else {
+                    layer.msg('加载结果失败', {icon: 2});
+                }
+            },
+            error: function() {
+                layer.msg('加载结果失败，请刷新页面', {icon: 2});
+            }
+        });
+    }
+
+    // 显示失败结果
+    // 恢复操作按钮模板
+    var actionButtonsHtml = null;
+    function restoreActionButtons() {
+        var actions = document.querySelector('.text-center.mt-3');
+        if (!actions) return;
+        if (!actionButtonsHtml) {
+            // 首次调用时保存模板
+            actionButtonsHtml = actions.innerHTML;
+        }
+        // 如果当前是错误提示，恢复按钮
+        if (actions.innerHTML.indexOf('exclamation-triangle') !== -1 || !actions.querySelector('.btn-scan')) {
+            actions.innerHTML = actionButtonsHtml;
+            // 重新绑定按钮状态
+            if (currentAnalysisData) {
+                document.getElementById('consultBtn').style.display = 'inline-block';
+            }
+            if (!isSpeaking) {
+                document.getElementById('speakStartBtn').style.display = '';
+                document.getElementById('speakStopBtn').style.display = 'none';
+            }
+        }
+    }
+
+    function showFailedResult(errorMsg) {
+        currentAnalysisData = null;
+        document.getElementById('resultArea').style.display = 'block';
+        document.getElementById('patientInfo').style.display = 'none';
+        document.getElementById('diagnosisInfo').style.display = 'none';
+        document.getElementById('symptomsInfo').style.display = 'none';
+        document.getElementById('examinationsInfo').style.display = 'none';
+        document.getElementById('medicationsInfo').style.display = 'none';
+        document.getElementById('recommendationsInfo').style.display = 'none';
+        document.getElementById('hospitalInfo').style.display = 'none';
+        var actions = document.querySelector('.text-center.mt-3');
+        if (actions) {
+            if (!actionButtonsHtml) actionButtonsHtml = actions.innerHTML;
+            actions.innerHTML = '<p style="color:#e74c3c;"><i class="fa fa-exclamation-triangle"></i> ' +
+                escapeHtml(errorMsg) + '</p>' +
+                '<button class="btn btn-reset" onclick="resetAll()"><i class="fa fa-refresh"></i> 重新上传</button>';
+        }
+    }
+
+    // ==================== 语音播报功能（修复版） ====================
+
+    // 语音播报主函数
+    function speakAnalysisResult() {
+        if (!currentAnalysisData) {
+            layer.msg('没有可播报的分析结果', {icon: 2});
+            return;
+        }
+
+        // 如果正在播报，先停止
+        if (isSpeaking) {
+            stopSpeaking();
+            // 延迟后重新开始
+            setTimeout(function() {
+                startSpeaking();
+            }, 200);
+        } else {
+            startSpeaking();
+        }
+    }
+
+    // 开始播报
+    function startSpeaking() {
+        // 构建播报文本
+        let speechText = buildSpeechText();
+
+        if (!speechText) {
+            layer.msg('未能提取到有效的医疗信息', {icon: 2});
+            return;
+        }
+
+        if (!('speechSynthesis' in window)) {
+            layer.msg('您的浏览器不支持语音播报功能', {icon: 2});
+            return;
+        }
+
+        // 创建语音对象
+        const utterance = new SpeechSynthesisUtterance(speechText);
+        utterance.lang = 'zh-CN';
+        utterance.rate = 0.9;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+
+        // 使用预选的声音
+        if (selectedVoice) {
+            utterance.voice = selectedVoice;
+        }
+
+        // 保存当前utterance以便停止
+        currentUtterance = utterance;
+
+        // 开始事件
+        utterance.onstart = function() {
+            isSpeaking = true;
+            updateSpeakButtons(true);
+            console.log('开始语音播报');
+        };
+
+        // 结束事件（正常结束）
+        utterance.onend = function() {
+            isSpeaking = false;
+            currentUtterance = null;
+            updateSpeakButtons(false);
+            console.log('语音播报结束');
+        };
+
+        // 错误事件 - 注意：cancel()也会触发error，需要区分
+        utterance.onerror = function(event) {
+            // 如果是因为cancel()触发的错误，不显示错误提示
+            if (event.error === 'interrupted' || event.error === 'canceled') {
+                console.log('语音播报被中断');
+                // 确保按钮状态正确
+                isSpeaking = false;
+                currentUtterance = null;
+                updateSpeakButtons(false);
+            } else {
+                console.error('语音播报错误', event);
+                isSpeaking = false;
+                currentUtterance = null;
+                updateSpeakButtons(false);
+                layer.msg('语音播报失败，请重试', {icon: 2});
+            }
+        };
+
+        // 开始播报
+        window.speechSynthesis.cancel(); // 先取消任何正在播放的
+        window.speechSynthesis.speak(utterance);
+    }
+
+    // 停止播报
+    function stopSpeaking() {
+        if ('speechSynthesis' in window) {
+            // 直接取消，不触发额外操作
+            window.speechSynthesis.cancel();
+            isSpeaking = false;
+            currentUtterance = null;
+            updateSpeakButtons(false);
+            console.log('语音播报已停止');
+        }
+    }
+
+    // 更新播报按钮状态
+    function updateSpeakButtons(isPlaying) {
+        if (isPlaying) {
+            $('#speakStartBtn').hide();
+            $('#speakStopBtn').show();
+        } else {
+            $('#speakStartBtn').show();
+            $('#speakStopBtn').hide();
+        }
+    }
+
+    // 构建播报文本
+    function buildSpeechText() {
+        let speechText = '';
+
+        // 患者信息
+        const patientName = currentAnalysisData.patient_name;
+        if (patientName && patientName !== '-' && patientName !== '待补充' && patientName !== 'null') {
+            speechText += `患者${patientName}，`;
+        }
+
+        // 诊断结论
+        const diagnosis = currentAnalysisData.diagnosis?.primary_diagnosis;
+        if (diagnosis && diagnosis !== '-' && diagnosis !== '待查' && diagnosis !== 'null') {
+            speechText += `诊断结果为${diagnosis}。`;
+        }
+
+        // 症状
+        const symptoms = currentAnalysisData.symptoms;
+        if (symptoms && symptoms.length > 0) {
+            const validSymptoms = symptoms.filter(s => s && s !== 'null');
+            if (validSymptoms.length > 0) {
+                speechText += `主要症状包括：${validSymptoms.join('、')}。`;
+            }
+        }
+
+        // 用药建议
+        const medications = currentAnalysisData.medications;
+        if (medications && medications.length > 0) {
+            const validMeds = medications.filter(m => m.name && m.name !== 'null');
+            if (validMeds.length > 0) {
+                speechText += `用药建议：`;
+                validMeds.forEach(med => {
+                    speechText += `${med.name}，`;
+                });
+                speechText = speechText.slice(0, -1) + '。';
+            }
+        }
+
+        // 医生建议
+        const recommendations = currentAnalysisData.recommendations;
+        if (recommendations && recommendations !== '-' && recommendations !== '无' && recommendations !== 'null') {
+            speechText += `医生建议：${recommendations}。`;
+        }
+
+        return speechText;
+    }
+
+    // ==================== 页面生命周期管理 ====================
+
+    // 页面离开或刷新时停止播报
+    window.addEventListener('beforeunload', function() {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+        }
+    });
+
+    // 页面隐藏时停止播报（如切换到其他标签页）
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden && 'speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            if (isSpeaking) {
+                isSpeaking = false;
+                currentUtterance = null;
+                updateSpeakButtons(false);
+            }
+        }
+    });
+
+    // 显示分析结果
+    function displayAnalysisResult(data) {
+        // 重置所有结果区域的显示状态
+        document.getElementById('patientInfo').style.display = '';
+        document.getElementById('diagnosisInfo').style.display = '';
+        document.getElementById('symptomsInfo').style.display = '';
+        document.getElementById('examinationsInfo').style.display = '';
+        document.getElementById('medicationsInfo').style.display = '';
+        document.getElementById('recommendationsInfo').style.display = '';
+        document.getElementById('hospitalInfo').style.display = '';
+        // 恢复操作按钮（可能被 showFailedResult 覆盖）
+        restoreActionButtons();
+
+        // 患者信息
+        document.getElementById('patientName').innerText = data.patient_name || '-';
+        document.getElementById('patientAge').innerText = data.patient_age || '-';
+        document.getElementById('patientGender').innerText = data.patient_gender || '-';
+
+        // 诊断信息
+        if (data.diagnosis) {
+            document.getElementById('primaryDiagnosis').innerText = data.diagnosis.primary_diagnosis || '-';
+            document.getElementById('secondaryDiagnosis').innerText = data.diagnosis.secondary_diagnosis || '-';
+            document.getElementById('icdCode').innerText = data.diagnosis.icd_code || '-';
+        }
+
+        // 症状列表
+        if (data.symptoms && data.symptoms.length > 0) {
+            let html = '<ul>';
+            data.symptoms.forEach(symptom => {
+                if (symptom && symptom !== 'null') {
+                    html += `<li>${escapeHtml(symptom)}</li>`;
+                }
+            });
+            html += '</ul>';
+            document.getElementById('symptomsList').innerHTML = html;
+        } else {
+            document.getElementById('symptomsList').innerHTML = '<p>无</p>';
+        }
+
+        // 检查项目
+        if (data.examinations && data.examinations.length > 0) {
+            let html = '<table class="table table-sm">';
+            html += '<thead><tr><th>检查项目</th><th>结果</th><th>参考范围</th><th>状态</th></tr></thead><tbody>';
+            data.examinations.forEach(exam => {
+                if (exam.item && exam.item !== 'null') {
+                    let statusBadge = '';
+                    if (exam.status === '正常') {
+                        statusBadge = '<span class="badge-normal">正常</span>';
+                    } else if (exam.status === '偏高' || exam.status === '偏低') {
+                        statusBadge = '<span class="badge-abnormal">' + exam.status + '</span>';
+                    } else {
+                        statusBadge = '<span class="badge-warning">' + (exam.status || '待确认') + '</span>';
+                    }
+                    html += `<tr>
+                                <td>${escapeHtml(exam.item)}</td>
+                                <td>${escapeHtml(exam.result) || '-'}</td>
+                                <td>${escapeHtml(exam.reference) || '-'}</td>
+                                <td>${statusBadge}</td>
+                             </tr>`;
+                }
+            });
+            html += '</tbody></table>';
+            document.getElementById('examinationsList').innerHTML = html;
+        } else {
+            document.getElementById('examinationsList').innerHTML = '<p>无检查项目</p>';
+        }
+
+        // 用药建议（带购买链接）
+// 用药建议（带购买按钮）
+        if (data.medications && data.medications.length > 0) {
+            let html = '<table class="table table-sm">';
+            html += '<thead><tr><th>药品名称</th><th>用法用量</th><th>频率</th><th>周期</th><th>购买</th></tr></thead><tbody>';
+            data.medications.forEach(med => {
+                if (med.name && med.name !== 'null') {
+                    html += `<tr>
+                        <td>${escapeHtml(med.name)}</td>
+                        <td>${escapeHtml(med.dosage) || '-'}</td>
+                        <td>${escapeHtml(med.frequency) || '-'}</td>
+                        <td>${escapeHtml(med.duration) || '-'}</td>
+                        <td><button class="btn-buy" onclick="createOrderAndBuy('${escapeHtml(med.name)}', '${escapeHtml(med.dosage) || ''}', '${escapeHtml(med.frequency) || ''}', '${escapeHtml(med.duration) || ''}', '${med.price}')">
+                            <i class="fa fa-shopping-cart"></i> 购买
+                        </button></td>
+                     </tr>`;
+                }
+            });
+            html += '</tbody></td>';
+            document.getElementById('medicationsList').innerHTML = html;
+        } else {
+            document.getElementById('medicationsList').innerHTML = '<p>无用药建议</p>';
+        }
+
+        // 医生建议
+        document.getElementById('recommendations').innerText = data.recommendations || '无';
+
+        // 医院信息
+        document.getElementById('hospitalName').innerText = data.hospital_name || '-';
+        document.getElementById('doctorName').innerText = data.doctor_name || '-';
+        document.getElementById('reportDate').innerText = data.report_date || '-';
+
+        // 置信度
+        let confidence = data.confidence || 0;
+        document.getElementById('confidenceFill').style.width = (confidence * 100) + '%';
+        document.getElementById('confidenceValue').innerText = Math.round(confidence * 100) + '%';
+
+        // 显示结果区域
+        document.getElementById('resultArea').style.display = 'block';
+
+        // 显示咨询按钮
+        document.getElementById('consultBtn').style.display = 'inline-block';
+
+        // 滚动到结果区域
+        document.getElementById('resultArea').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // 辅助函数：转义HTML
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // 生成购买链接
+    function generateBuyLink(drugName) {
+        const encodedName = encodeURIComponent(drugName);
+        return `https://search.jd.com/Search?keyword=${encodedName}&ev=exbrand_`;
+    }
+
+    // 重置上传
+    function resetUpload() {
+        // 停止正在播放的语音
+        if (isSpeaking) {
+            stopSpeaking();
+        }
+        // 停止轮询
+        if (pollingTimer) {
+            clearInterval(pollingTimer);
+            pollingTimer = null;
+        }
+        currentFile = null;
+        currentTaskId = null;
+        document.getElementById('fileInput').value = '';
+        document.getElementById('fileInfo').style.display = 'none';
+        document.getElementById('previewRow').style.display = 'none';
+        document.getElementById('featureIntro').style.display = 'block';
+        document.getElementById('resultArea').style.display = 'none';
+        document.getElementById('previewImage').src = '';
+        // 恢复操作按钮区域
+        var actions = document.querySelector('.text-center.mt-3');
+        if (actions) {
+            // 恢复原始按钮（由显示时重新构建）
+        }
+    }
+
+    // 重置所有
+    function resetAll() {
+        resetUpload();
+    }
+
+    // 生成美观的报告HTML（简化版，完整版保留）
+    function generateReportHTML(analysisData, fileName) {
+        const now = new Date();
+        const reportDate = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`;
+        const reportTime = `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}`;
+
+        const patientName = analysisData.patient_name || '待补充';
+        const patientAge = analysisData.patient_age || '待补充';
+        const patientGender = analysisData.patient_gender || '待补充';
+
+        let diagnosisHtml = '';
+        if (analysisData.diagnosis) {
+            diagnosisHtml = `
+            <div class="diagnosis-box" style="background: #e8f5e9; padding: 15px; border-radius: 10px; margin: 15px 0;">
+                <div style="font-size: 18px; font-weight: bold; color: #2e7d32; margin-bottom: 10px;">🏥 诊断结论</div>
+                <div style="font-size: 20px; font-weight: bold; color: #1b5e20;">${escapeHtml(analysisData.diagnosis.primary_diagnosis || '待查')}</div>
+                ${analysisData.diagnosis.secondary_diagnosis ? `<div style="margin-top: 8px; color: #555;">合并症：${escapeHtml(analysisData.diagnosis.secondary_diagnosis)}</div>` : ''}
+                ${analysisData.diagnosis.icd_code ? `<div style="margin-top: 5px; color: #888; font-size: 12px;">ICD-10编码：${escapeHtml(analysisData.diagnosis.icd_code)}</div>` : ''}
+            </div>`;
+        }
+
+        let symptomsHtml = '';
+        if (analysisData.symptoms && analysisData.symptoms.length > 0) {
+            let symptomsList = '';
+            analysisData.symptoms.forEach(s => {
+                if (s && s !== 'null') {
+                    symptomsList += `<li style="margin: 5px 0;">• ${escapeHtml(s)}</li>`;
+                }
+            });
+            if (symptomsList) {
+                symptomsHtml = `<div class="report-section"><div class="section-title">🤒 症状表现</div><ul style="margin: 0; padding-left: 20px;">${symptomsList}</ul></div>`;
+            }
+        }
+
+        let examinationsHtml = '';
+        if (analysisData.examinations && analysisData.examinations.length > 0) {
+            let rows = '';
+            analysisData.examinations.forEach(exam => {
+                if (exam.item && exam.item !== 'null') {
+                    const statusText = exam.status || '—';
+                    let statusStyle = '';
+                    if (statusText === '偏高' || statusText === '偏低') {
+                        statusStyle = 'color: #d32f2f; font-weight: bold;';
+                    } else if (statusText === '正常') {
+                        statusStyle = 'color: #388e3c; font-weight: bold;';
+                    }
+                    rows += `<tr><td style="padding: 10px; border-bottom: 1px solid #eee;">${escapeHtml(exam.item)}</td><td style="padding: 10px; border-bottom: 1px solid #eee;">${escapeHtml(exam.result) || '—'}</td><td style="padding: 10px; border-bottom: 1px solid #eee;">${escapeHtml(exam.reference) || '—'}</td><td style="padding: 10px; border-bottom: 1px solid #eee; ${statusStyle}">${escapeHtml(statusText)}</td></tr>`;
+                }
+            });
+            if (rows) {
+                examinationsHtml = `<div class="report-section"><div class="section-title">🔬 检验检查结果</div><table style="width: 100%; border-collapse: collapse;"><thead><tr style="background: #4CAF50; color: white;"><th style="padding: 10px; text-align: left;">检查项目</th><th style="padding: 10px; text-align: left;">结果</th><th style="padding: 10px; text-align: left;">参考范围</th><th style="padding: 10px; text-align: left;">判定</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+            }
+        }
+
+        let medicationsHtml = '';
+        if (analysisData.medications && analysisData.medications.length > 0) {
+            let rows = '';
+            analysisData.medications.forEach(med => {
+                if (med.name && med.name !== 'null') {
+                    const buyLink = `https://search.jd.com/Search?keyword=${encodeURIComponent(med.name)}&enc=utf-8`;
+                    rows += `<tr><td style="padding: 10px; border-bottom: 1px solid #eee;"><strong style="color: #2e7d32;">${escapeHtml(med.name)}</strong><br><a href="${buyLink}" target="_blank" style="color: #ff6b6b; font-size: 12px; text-decoration: none; display: inline-block; margin-top: 5px;"><i class="fa fa-shopping-cart"></i> 在线购买</a></td><td style="padding: 10px; border-bottom: 1px solid #eee;">${escapeHtml(med.dosage) || '—'}</td><td style="padding: 10px; border-bottom: 1px solid #eee;">${escapeHtml(med.frequency) || '—'}</td><td style="padding: 10px; border-bottom: 1px solid #eee;">${escapeHtml(med.duration) || '—'}</td></tr>`;
+                }
+            });
+            if (rows) {
+                medicationsHtml = `<div class="report-section"><div class="section-title">💊 用药建议 <span style="font-size: 12px; color: #999;">(点击药品名称旁的链接可在线购买)</span></div><table style="width: 100%; border-collapse: collapse;"><thead><tr style="background: #4CAF50; color: white;"><th style="padding: 10px; text-align: left;">药品名称</th><th style="padding: 10px; text-align: left;">用法用量</th><th style="padding: 10px; text-align: left;">用药频率</th><th style="padding: 10px; text-align: left;">用药周期</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+            }
+        }
+
+        let recommendationsHtml = '';
+        if (analysisData.recommendations && analysisData.recommendations !== 'null' && analysisData.recommendations !== '') {
+            recommendationsHtml = `<div class="report-section"><div class="section-title">📝 医嘱建议</div><div style="background: #fff3e0; padding: 15px; border-radius: 8px; line-height: 1.6;">${escapeHtml(analysisData.recommendations)}</div></div>`;
+        }
+
+        const hospitalName = analysisData.hospital_name || '智愈医疗合作医院';
+        const doctorName = analysisData.doctor_name || 'AI智能医生';
+        const confidence = analysisData.confidence ? Math.round(analysisData.confidence * 100) + '%' : '95%';
+
+        return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>智愈医疗诊断报告</title><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"><style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Microsoft YaHei','SimHei','PingFang SC','Helvetica Neue',Arial,sans-serif;background:white;padding:40px 20px;}.report-container{max-width:800px;margin:0 auto;background:white;box-shadow:0 2px 20px rgba(0,0,0,0.1);border-radius:12px;overflow:hidden;}.report-header{text-align:center;padding:30px 20px 20px;background:linear-gradient(135deg,#e8f5e9 0%,#c8e6c9 100%);}.report-title{font-size:28px;font-weight:bold;color:#2e7d32;margin-bottom:8px;}.report-subtitle{font-size:12px;color:#666;}.hospital-info{text-align:center;margin-top:10px;font-size:14px;color:#555;}.report-body{padding:30px;}.info-card{background:#f5f5f5;border-radius:12px;padding:20px;margin-bottom:20px;}.info-row{display:flex;margin-bottom:10px;flex-wrap:wrap;}.info-label{width:100px;font-weight:bold;color:#555;}.info-value{flex:1;color:#333;}.report-section{margin-bottom:25px;page-break-inside:avoid;}.section-title{font-size:18px;font-weight:bold;color:#2e7d32;border-left:4px solid #4CAF50;padding-left:12px;margin-bottom:15px;}.report-footer{background:#f5f5f5;padding:20px;text-align:center;font-size:11px;color:#999;}.disclaimer{background:#fafafa;padding:12px;border-radius:6px;font-size:10px;color:#888;text-align:center;margin-top:20px;}table{width:100%;border-collapse:collapse;}th{background:#4CAF50;color:white;padding:10px;text-align:left;}td{padding:10px;border-bottom:1px solid #eee;}@media print{body{padding:0;margin:0;}.report-container{box-shadow:none;border-radius:0;}}.signature-line{margin-top:30px;padding-top:15px;display:flex;justify-content:space-between;border-top:1px solid #eee;}.verification-code{text-align:center;margin-top:20px;padding-top:15px;border-top:1px dashed #ddd;font-size:10px;color:#aaa;}</style></head><body><div class="report-container"><div class="report-header"><div class="report-title">智愈医疗 · 智能诊断分析报告</div><div class="report-subtitle">AI-Powered Medical Diagnosis Report</div><div class="hospital-info">🏥 ${escapeHtml(hospitalName)}</div></div><div class="report-body"><div class="info-card"><div class="info-row"><div class="info-label">📋 报告编号：</div><div class="info-value">RPT${Date.now()}</div></div><div class="info-row"><div class="info-label">📅 报告日期：</div><div class="info-value">${reportDate} ${reportTime}</div></div><div class="info-row"><div class="info-label">📄 原始文件：</div><div class="info-value">${escapeHtml(fileName) || '诊断书图片'}</div></div><div class="info-row"><div class="info-label">🤖 分析引擎：</div><div class="info-value">通义千问VL大模型 v1.0</div></div></div><div class="info-card"><div class="info-row"><div class="info-label">👤 患者姓名：</div><div class="info-value">${escapeHtml(patientName)}</div></div><div class="info-row"><div class="info-label">🎂 年龄：</div><div class="info-value">${escapeHtml(patientAge)}</div></div><div class="info-row"><div class="info-label">⚥ 性别：</div><div class="info-value">${escapeHtml(patientGender)}</div></div></div>${diagnosisHtml}${symptomsHtml}${examinationsHtml}${medicationsHtml}${recommendationsHtml}<div class="info-card"><div class="info-row"><div class="info-label">👨‍⚕️ 诊断医师：</div><div class="info-value">${escapeHtml(doctorName)}</div></div><div class="info-row"><div class="info-label">📊 分析置信度：</div><div class="info-value"><div style="background:#e0e0e0;border-radius:10px;height:8px;width:200px;display:inline-block;margin-left:5px;"><div style="background:#4CAF50;width:${confidence};height:8px;border-radius:10px;"></div></div><span style="margin-left:10px;">${confidence}</span></div></div><div class="info-row"><div class="info-label">✅ 审核状态：</div><div class="info-value" style="color:#4CAF50;">AI初稿待审核</div></div></div><div class="signature-line"><div>诊断医师签名：_________________</div><div>审核医师签名：_________________</div></div><div class="verification-code">报告验证码：${Math.random().toString(36).substring(2, 10).toUpperCase()}</div><div class="disclaimer"><strong>免责声明</strong><br>本报告由AI智能生成，基于通义千问VL大模型分析结果。<br>报告内容仅供参考，不能替代专业医生的诊断和建议。如有不适，请及时就医。</div></div><div class="report-footer">智愈医疗自助服务系统 · 让医疗更智慧<br>服务热线：400-888-XXXX | 官网：www.zhiyu-medical.com</div></div></body></html>`;
+    }
+
+    // 咨询智能医生
+    function consultDoctor() {
+        if (!currentAnalysisData) {
+            layer.msg('没有可咨询的分析结果', {icon: 2});
+            return;
+        }
+
+        const consultContext = {
+            patientName: currentAnalysisData.patient_name || '未知',
+            primaryDiagnosis: currentAnalysisData.diagnosis?.primary_diagnosis || '未知',
+            symptoms: currentAnalysisData.symptoms || [],
+            medications: currentAnalysisData.medications || [],
+            recommendations: currentAnalysisData.recommendations || ''
+        };
+
+        const encodedContext = encodeURIComponent(JSON.stringify(consultContext));
+        window.location.href = `/doctor?consultContext=${encodedContext}`;
+    }
+
+    // 预览报告
+    function previewReport() {
+        if (!currentAnalysisData) {
+            layer.msg('没有可导出的分析结果', {icon: 2});
+            return;
+        }
+
+        const fileName = currentFile ? currentFile.name : '诊断报告';
+        const reportHtml = generateReportHTML(currentAnalysisData, fileName);
+        document.getElementById('reportContent').innerHTML = reportHtml;
+        document.getElementById('reportPreviewModal').style.display = 'block';
+    }
+
+    // 关闭预览
+    function closeReportPreview() {
+        document.getElementById('reportPreviewModal').style.display = 'none';
+    }
+
+    // 打印报告
+    // 打印报告
+    function printReport() {
+        const printContent = document.getElementById('reportContent').innerHTML;
+        const printWindow = window.open('', '_blank');
+
+        // 构建完整的 HTML 文档，包含样式
+        printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>智愈医疗诊断报告</title>
+            <style>
+                /* ===== 重置样式 ===== */
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body {
+                    font-family: "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", "SimSun", "Helvetica Neue", Arial, sans-serif;
+                    background: white;
+                    padding: 20px;
+                    line-height: 1.8;
+                    color: #333;
+                    font-size: 14px;
+                }
+                .report-container {
+                    max-width: 800px;
+                    margin: 0 auto;
+                    background: white;
+                }
+                .report-header {
+                    text-align: center;
+                    padding: 30px 20px 20px;
+                    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+                    border-radius: 12px 12px 0 0;
+                }
+                .report-title {
+                    font-size: 26px;
+                    font-weight: bold;
+                    color: #2e7d32;
+                    margin-bottom: 6px;
+                }
+                .report-subtitle {
+                    font-size: 12px;
+                    color: #666;
+                }
+                .hospital-info {
+                    text-align: center;
+                    margin-top: 8px;
+                    font-size: 14px;
+                    color: #555;
+                }
+                .report-body {
+                    padding: 25px 30px;
+                }
+                .info-card {
+                    background: #f5f7fa;
+                    border-radius: 10px;
+                    padding: 18px 20px;
+                    margin-bottom: 18px;
+                }
+                .info-row {
+                    display: flex;
+                    margin-bottom: 6px;
+                    flex-wrap: wrap;
+                    align-items: baseline;
+                }
+                .info-label {
+                    width: 110px;
+                    font-weight: 600;
+                    color: #555;
+                    flex-shrink: 0;
+                }
+                .info-value {
+                    flex: 1;
+                    color: #333;
+                    word-break: break-word;
+                }
+                .report-section {
+                    margin-bottom: 22px;
+                    page-break-inside: avoid;
+                }
+                .section-title {
+                    font-size: 17px;
+                    font-weight: bold;
+                    color: #2e7d32;
+                    border-left: 4px solid #4CAF50;
+                    padding-left: 12px;
+                    margin-bottom: 12px;
+                }
+                .diagnosis-box {
+                    background: #e8f5e9;
+                    padding: 15px 18px;
+                    border-radius: 10px;
+                    margin: 12px 0;
+                }
+                .diagnosis-box .primary-diagnosis {
+                    font-size: 19px;
+                    font-weight: bold;
+                    color: #1b5e20;
+                }
+                .report-footer {
+                    background: #f5f7fa;
+                    padding: 18px 20px;
+                    text-align: center;
+                    font-size: 11px;
+                    color: #999;
+                    border-radius: 0 0 12px 12px;
+                }
+                .disclaimer {
+                    background: #fafafa;
+                    padding: 12px 15px;
+                    border-radius: 6px;
+                    font-size: 10px;
+                    color: #888;
+                    text-align: center;
+                    margin-top: 18px;
+                    line-height: 1.6;
+                }
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin: 10px 0;
+                    font-size: 13px;
+                }
+                table th {
+                    background: #4CAF50;
+                    color: white;
+                    padding: 8px 12px;
+                    text-align: left;
+                    font-weight: 600;
+                }
+                table td {
+                    padding: 8px 12px;
+                    border-bottom: 1px solid #eee;
+                }
+                .signature-line {
+                    margin-top: 28px;
+                    padding-top: 15px;
+                    display: flex;
+                    justify-content: space-between;
+                    border-top: 1px solid #eee;
+                    flex-wrap: wrap;
+                    gap: 10px;
+                }
+                .verification-code {
+                    text-align: center;
+                    margin-top: 18px;
+                    padding-top: 12px;
+                    border-top: 1px dashed #ddd;
+                    font-size: 10px;
+                    color: #aaa;
+                }
+                ul, ol {
+                    padding-left: 22px;
+                    margin: 6px 0;
+                }
+                li {
+                    margin-bottom: 3px;
+                }
+                p {
+                    margin: 4px 0;
+                }
+                strong, b {
+                    font-weight: 600;
+                }
+
+                /* 打印优化 */
+                @media print {
+                    body { padding: 0; margin: 0; }
+                    .report-header { border-radius: 0; }
+                    .report-footer { border-radius: 0; }
+                    .report-container { box-shadow: none; }
+                    .no-print { display: none !important; }
+                }
+            </style>
+        </head>
+        <body>
+            ${printContent}
+        </body>
+        </html>
+    `);
+
+        printWindow.document.close();
+        printWindow.onload = function() {
+            printWindow.print();
+        };
+    }
+
+    // 创建订单并购买（从药品名称查询药品ID）
+    function createOrderAndBuy(medicineName, dosage, frequency, duration, price) {
+        // 先检查登录状态
+        var isLogin = [[${session.loginUser != null}]];
+        if (!isLogin) {
+            layer.msg('请先登录后再购买', {icon: 2});
+            return;
+        }
+
+        // 根据药品名称查询药品信息
+        $.ajax({
+            url: '/api/medicine/search',
+            type: 'GET',
+            data: { name: medicineName },
+            dataType: 'json',
+            success: function(response) {
+                if (response.code === 'SUCCESS' || response.code === 200) {
+                    var medicine = response.data;
+                    // 弹出数量选择
+                    layer.prompt({
+                        title: '购买 ' + medicine.name,
+                        value: '1',
+                        formType: 0,  // 数字输入框
+                        area: ['300px', '150px']
+                    }, function(quantity, index) {
+                        layer.close(index);
+                        var qty = parseInt(quantity);
+                        if (isNaN(qty) || qty < 1) {
+                            layer.msg('请输入正确的数量', {icon: 2});
+                            return;
+                        }
+                        createOrder(medicine.id, qty);
+                    });
+                } else {
+                    layer.msg('未找到该药品，请前往药品页面购买', {icon: 2});
+                }
+            },
+            error: function() {
+                layer.msg('查询药品失败', {icon: 2});
+            }
+        });
+    }
+
+    // 创建订单并跳转支付
+    function createOrder(medicineId, quantity) {
+        layer.msg('正在创建订单...', {icon: 1, time: 1000});
+
+        $.ajax({
+            url: '/order/create',
+            type: 'POST',
+            data: { medicineId: medicineId, quantity: quantity },
+            dataType: 'json',
+            success: function(response) {
+                if (response.code === 'SUCCESS') {
+                    var order = response.data;
+                    layer.closeAll();
+                    window.location.href = '/payment?orderId=' + order.id;
+                } else {
+                    layer.msg(response.message || '创建订单失败', {icon: 2});
+                }
+            },
+            error: function(xhr) {
+                try {
+                    var resp = JSON.parse(xhr.responseText);
+                    layer.msg(resp.message || '网络错误', {icon: 2});
+                } catch(e) {
+                    layer.msg('网络错误，请稍后再试', {icon: 2});
+                }
+            }
+        });
+    }
+</script>
+</body>
+</html>
